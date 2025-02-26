@@ -11,11 +11,20 @@ using StoicGoose.Core.Sound;
 
 namespace StoicGoose.Core.Interfaces
 {
+
 	public interface IMachine
 	{
-		static IEnumerable<Type> GetMachineTypes() => Assembly.GetAssembly(typeof(IMachine)).GetTypes().Where(x => !x.IsInterface && !x.IsAbstract && x.IsAssignableTo(typeof(IMachine)));
+        //static IEnumerable<Type> GetMachineTypes() => Assembly.GetAssembly(typeof(IMachine)).GetTypes().Where(x => !x.IsInterface && !x.IsAbstract && x.IsAssignableTo(typeof(IMachine)));
+        static IEnumerable<Type> GetMachineTypes()
+        {
+            return Assembly.GetAssembly(typeof(IMachine))
+                           .GetTypes()
+                           .Where(x => !x.IsInterface &&
+                                       !x.IsAbstract &&
+                                       typeof(IMachine).IsAssignableFrom(x));
+        }
 
-		string Manufacturer { get; }
+        string Manufacturer { get; }
 		string Model { get; }
 
 		int ScreenWidth { get; }

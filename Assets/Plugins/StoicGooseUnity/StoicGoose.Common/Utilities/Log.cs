@@ -1,31 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
-using Serilog.Formatting;
-using Serilog.Formatting.Display;
-
 using StoicGoose.Common.Extensions;
 
 namespace StoicGoose.Common.Utilities
 {
 	public enum LogSeverity { Verbose, Debug, Information, Warning, Error, Fatal }
+    public enum LogType { Debug, Warning, Error }
 
-	public static class Log
+    public interface IStoicGooseLogger
+    {
+        public void Log(LogType logtype, string message);
+        public void Debug(string message);
+        public void Warning(string message);
+        public void Err(string message);
+    }
+
+    public static class Log
 	{
 		const string defaultTemplate = "{Message}{NewLine}{Exception}";
 
-		readonly static Dictionary<LogSeverity, LogEventLevel> severityToEventLevelMapping = new()
+		readonly static Dictionary<LogSeverity, LogType> severityToEventLevelMapping = new()
 		{
-			{ LogSeverity.Verbose, LogEventLevel.Verbose },
-			{ LogSeverity.Debug, LogEventLevel.Debug },
-			{ LogSeverity.Information, LogEventLevel.Information },
-			{ LogSeverity.Warning, LogEventLevel.Warning },
-			{ LogSeverity.Error, LogEventLevel.Error },
-			{ LogSeverity.Fatal, LogEventLevel.Fatal }
+			{ LogSeverity.Verbose, LogType.Debug },
+			{ LogSeverity.Debug, LogType.Debug },
+			{ LogSeverity.Information, LogType.Debug },
+			{ LogSeverity.Warning, LogType.Warning },
+			{ LogSeverity.Error, LogType.Error },
+			{ LogSeverity.Fatal, LogType.Error }
 		};
 
 		readonly static Dictionary<LogSeverity, string> logSeverityAnsiColors = new()
@@ -38,75 +40,51 @@ namespace StoicGoose.Common.Utilities
 			{ LogSeverity.Fatal, Ansi.Red }
 		};
 
-		static Logger mainLogger = default;
-		static Logger fileLogger = default;
+		static IStoicGooseLogger mainLogger;
 
-		public static string LogPath { get; private set; } = string.Empty;
-
-		public static void Initialize(string logPath)
+		public static void Initialize(IStoicGooseLogger logger)
 		{
-			if (File.Exists(logPath)) File.Delete(logPath);
-
-			mainLogger = new LoggerConfiguration()
-				.MinimumLevel.Verbose()
-				.WriteTo.Console(outputTemplate: defaultTemplate)
-				.CreateLogger();
-
-			fileLogger = new LoggerConfiguration()
-				.MinimumLevel.Verbose()
-				.WriteTo.File(LogPath = logPath, restrictedToMinimumLevel: LogEventLevel.Verbose)
-				.CreateLogger();
+			mainLogger = logger;
 		}
 
-		public static void AttachTextWriter(TextWriter writer)
-		{
-			mainLogger = new LoggerConfiguration()
-				.MinimumLevel.Verbose()
-				.WriteTo.Sink(mainLogger)
-				.WriteTo.Sink(new TextWriterSink(writer, new MessageTemplateTextFormatter(defaultTemplate)))
-				.CreateLogger();
-		}
 
-		public static void WriteLine(string message) => Write(LogEventLevel.Information, message);
-		public static void WriteFatal(string message) => Write(LogEventLevel.Fatal, message);
+		public static void WriteLine(string message) => mainLogger.Debug(message);
+		//public static void WriteFatal(string message) => Write(LogEventLevel.Fatal, message);
 
-		private static void Write(LogEventLevel logEventLevel, string message)
-		{
-			mainLogger?.Write(logEventLevel, message);
-			fileLogger?.Write(logEventLevel, message.RemoveAnsi());
-		}
+		//private static void Write(LogEventLevel logEventLevel, string message)
+		//{
+		//	mainLogger?.Write(logEventLevel, message);
+		//	fileLogger?.Write(logEventLevel, message.RemoveAnsi());
+		//}
 
 		public static void WriteEvent(LogSeverity severity, object source, string message)
 		{
-			if (mainLogger == null && fileLogger == null) return;
-
-			var eventLevel = severityToEventLevelMapping.ContainsKey(severity) ? severityToEventLevelMapping[severity] : LogEventLevel.Verbose;
+			var eventLevel = severityToEventLevelMapping.ContainsKey(severity) ? severityToEventLevelMapping[severity] : LogType.Debug;
 			var logMessage = $"{logSeverityAnsiColors[severity]}[{source?.GetType().Name ?? string.Empty}]{Ansi.Reset}: {message}";
-			mainLogger?.Write(eventLevel, logMessage);
-			fileLogger?.Write(eventLevel, logMessage.RemoveAnsi());
+			mainLogger.Log(eventLevel, logMessage);
 		}
 	}
 
-	class TextWriterSink : ILogEventSink
-	{
-		readonly TextWriter textWriter = default;
-		readonly ITextFormatter textFormatter = default;
+	//class TextWriterSink : ILogEventSink
+	//{
+	//	readonly TextWriter textWriter = default;
+	//	readonly ITextFormatter textFormatter = default;
 
-		readonly object syncRoot = new();
+	//	readonly object syncRoot = new();
 
-		public TextWriterSink(TextWriter writer, ITextFormatter formatter)
-		{
-			textWriter = writer;
-			textFormatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
-		}
+	//	//public TextWriterSink(TextWriter writer, ITextFormatter formatter)
+	//	//{
+	//	//	textWriter = writer;
+	//	//	textFormatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
+	//	//}
 
-		public void Emit(LogEvent logEvent)
-		{
-			lock (syncRoot)
-			{
-				textFormatter.Format(logEvent ?? throw new ArgumentNullException(nameof(logEvent)), textWriter);
-				textWriter.Flush();
-			}
-		}
-	}
+	//	public void Emit(LogEvent logEvent)
+	//	{
+	//		lock (syncRoot)
+	//		{
+	//			textFormatter.Format(logEvent ?? throw new ArgumentNullException(nameof(logEvent)), textWriter);
+	//			textWriter.Flush();
+	//		}
+	//	}
+	//}
 }
