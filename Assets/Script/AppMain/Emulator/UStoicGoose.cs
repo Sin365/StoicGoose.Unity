@@ -51,6 +51,11 @@ public class UStoicGoose : MonoBehaviour
 
     void Awake()
     {
+        //关闭垂直同步
+        QualitySettings.vSyncCount = 0;
+        //设为60帧
+        Application.targetFrameRate = 60;
+
         instance = this;
         loggerHandler = new SGLogger();
         graphicsHandler = this.gameObject.GetComponent<SGVideoPlayer>();
@@ -364,6 +369,9 @@ public class UStoicGoose : MonoBehaviour
 
         LoadBootstrap(emulatorHandler.Machine is WonderSwan ? Program.Configuration.General.BootstrapFile : Program.Configuration.General.BootstrapFileWSC);
         LoadInternalEeprom();
+
+        //初始化音频
+        soundHandler.Initialize();
 
         emulatorHandler.Startup();
 
