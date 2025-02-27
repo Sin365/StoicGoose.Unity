@@ -1,4 +1,5 @@
 ﻿using StoicGoose.Core.Interfaces;
+using StoicGooseUnity;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -7,7 +8,7 @@ public class EmulatorHandler
 {
     readonly static string threadName = $"Unity_Emulation";
 
-    Thread thread = default;
+    //Thread thread = default;
     volatile bool threadRunning = false, threadPaused = false;
 
     volatile bool isResetRequested = false;
@@ -21,6 +22,7 @@ public class EmulatorHandler
 
     public EmulatorHandler(Type machineType)
     {
+        StoicGooseUnityAxiMem.Init();
         Machine = Activator.CreateInstance(machineType) as IMachine;
         Machine.Initialize();
     }
@@ -32,8 +34,8 @@ public class EmulatorHandler
         threadRunning = true;
         threadPaused = false;
 
-        thread = new Thread(ThreadMainLoop) { Name = threadName, Priority = ThreadPriority.AboveNormal, IsBackground = false };
-        thread.Start();
+        //thread = new Thread(ThreadMainLoop) { Name = threadName, Priority = ThreadPriority.AboveNormal, IsBackground = false };
+        //thread.Start();
     }
 
     public void Reset()
@@ -57,10 +59,9 @@ public class EmulatorHandler
     {
         threadRunning = false;
         threadPaused = false;
-
-        thread?.Join();
-
+        //thread?.Join();
         Machine.Shutdown();
+        StoicGooseUnityAxiMem.FreeAllGCHandle();
     }
 
     public void SetFpsLimiter(bool value)
@@ -117,5 +118,13 @@ public class EmulatorHandler
             else
                 lastTime = stopWatch.Elapsed.TotalMilliseconds;
         }
+    }
+
+    public void Frame_Update()
+    {
+        if (!threadRunning)
+            return;
+
+        Machine.RunFrame();
     }
 }

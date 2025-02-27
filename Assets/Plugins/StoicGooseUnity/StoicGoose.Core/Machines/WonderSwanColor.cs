@@ -5,7 +5,7 @@ using StoicGoose.Core.Display;
 using StoicGoose.Core.DMA;
 using StoicGoose.Core.Serial;
 using StoicGoose.Core.Sound;
-
+using StoicGooseUnity;
 using static StoicGoose.Common.Utilities.BitHandling;
 
 namespace StoicGoose.Core.Machines
@@ -189,36 +189,65 @@ namespace StoicGoose.Core.Machines
 					ChangeBit(ref retVal, 6, keypadButtonEnable);
 
 					/* Get input from UI */
-					var buttonsHeld = ReceiveInput?.Invoke().buttonsHeld;
-					if (buttonsHeld != null)
-					{
-						if (buttonsHeld.Count > 0)
-							RaiseInterrupt(1);
+					var buttonsHeld = ReceiveInput?.Invoke();
+                    if (buttonsHeld != null)
+                    {
+                        if (buttonsHeld > 0)
+                            RaiseInterrupt(1);
 
-						if (keypadYEnable)
-						{
-							if (buttonsHeld.Contains("Y1")) ChangeBit(ref retVal, 0, true);
-							if (buttonsHeld.Contains("Y2")) ChangeBit(ref retVal, 1, true);
-							if (buttonsHeld.Contains("Y3")) ChangeBit(ref retVal, 2, true);
-							if (buttonsHeld.Contains("Y4")) ChangeBit(ref retVal, 3, true);
-						}
+                        if (keypadYEnable)
+                        {
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.Y1) > 0) ChangeBit(ref retVal, 0, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.Y2) > 0) ChangeBit(ref retVal, 1, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.Y3) > 0) ChangeBit(ref retVal, 2, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.Y4) > 0) ChangeBit(ref retVal, 3, true);
+                        }
 
-						if (keypadXEnable)
-						{
-							if (buttonsHeld.Contains("X1")) ChangeBit(ref retVal, 0, true);
-							if (buttonsHeld.Contains("X2")) ChangeBit(ref retVal, 1, true);
-							if (buttonsHeld.Contains("X3")) ChangeBit(ref retVal, 2, true);
-							if (buttonsHeld.Contains("X4")) ChangeBit(ref retVal, 3, true);
-						}
+                        if (keypadXEnable)
+                        {
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.X1) > 0) ChangeBit(ref retVal, 0, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.X2) > 0) ChangeBit(ref retVal, 1, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.X3) > 0) ChangeBit(ref retVal, 2, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.X4) > 0) ChangeBit(ref retVal, 3, true);
+                        }
 
-						if (keypadButtonEnable)
-						{
-							if (buttonsHeld.Contains("Start")) ChangeBit(ref retVal, 1, true);
-							if (buttonsHeld.Contains("A")) ChangeBit(ref retVal, 2, true);
-							if (buttonsHeld.Contains("B")) ChangeBit(ref retVal, 3, true);
-						}
-					}
-					break;
+                        if (keypadButtonEnable)
+                        {
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.Start) > 0) ChangeBit(ref retVal, 1, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.A) > 0) ChangeBit(ref retVal, 2, true);
+                            if ((buttonsHeld.Value & (ushort)StoicGooseKey.B) > 0) ChangeBit(ref retVal, 3, true);
+                        }
+                    }
+                    //var buttonsHeld = ReceiveInput?.Invoke().buttonsHeld;
+                    //if (buttonsHeld != null)
+                    //{
+                    //	if (buttonsHeld.Count > 0)
+                    //		RaiseInterrupt(1);
+
+                    //	if (keypadYEnable)
+                    //	{
+                    //		if (buttonsHeld.Contains("Y1")) ChangeBit(ref retVal, 0, true);
+                    //		if (buttonsHeld.Contains("Y2")) ChangeBit(ref retVal, 1, true);
+                    //		if (buttonsHeld.Contains("Y3")) ChangeBit(ref retVal, 2, true);
+                    //		if (buttonsHeld.Contains("Y4")) ChangeBit(ref retVal, 3, true);
+                    //	}
+
+                    //	if (keypadXEnable)
+                    //	{
+                    //		if (buttonsHeld.Contains("X1")) ChangeBit(ref retVal, 0, true);
+                    //		if (buttonsHeld.Contains("X2")) ChangeBit(ref retVal, 1, true);
+                    //		if (buttonsHeld.Contains("X3")) ChangeBit(ref retVal, 2, true);
+                    //		if (buttonsHeld.Contains("X4")) ChangeBit(ref retVal, 3, true);
+                    //	}
+
+                    //	if (keypadButtonEnable)
+                    //	{
+                    //		if (buttonsHeld.Contains("Start")) ChangeBit(ref retVal, 1, true);
+                    //		if (buttonsHeld.Contains("A")) ChangeBit(ref retVal, 2, true);
+                    //		if (buttonsHeld.Contains("B")) ChangeBit(ref retVal, 3, true);
+                    //	}
+                    //}
+                    break;
 
 				case 0xB6:
 					/* REG_INT_ACK */

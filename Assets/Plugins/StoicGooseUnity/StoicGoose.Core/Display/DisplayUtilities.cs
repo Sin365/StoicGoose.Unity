@@ -50,16 +50,24 @@ namespace StoicGoose.Core.Display
 
 		private static byte DuplicateBits(int value) => (byte)((value & 0b1111) | (value & 0b1111) << 4);
 
-		public static (byte r, byte g, byte b) GeneratePixel(byte data) => (DuplicateBits(data), DuplicateBits(data), DuplicateBits(data));
+        public static (byte r, byte g, byte b) GeneratePixel(byte data) => (DuplicateBits(data), DuplicateBits(data), DuplicateBits(data));
 		public static (byte r, byte g, byte b) GeneratePixel(ushort data) => (DuplicateBits(data >> 8), DuplicateBits(data >> 4), DuplicateBits(data >> 0));
 
-		public static void CopyPixel((byte r, byte g, byte b) pixel, byte[] data, int x, int y, int stride) => CopyPixel(pixel, data, ((y * stride) + x) * 4);
-		public static void CopyPixel((byte r, byte g, byte b) pixel, byte[] data, long address)
-		{
-			data[address + 0] = pixel.r;
-			data[address + 1] = pixel.g;
-			data[address + 2] = pixel.b;
-			data[address + 3] = 255;
-		}
-	}
+		public static unsafe void CopyPixel((byte r, byte g, byte b) pixel, byte* data, int x, int y, int stride) => CopyPixel(pixel, data, ((y * stride) + x) * 4);
+        public static unsafe void CopyPixel((byte r, byte g, byte b) pixel, byte* data, long address)
+        {
+            data[address + 0] = pixel.r;
+            data[address + 1] = pixel.g;
+            data[address + 2] = pixel.b;
+            data[address + 3] = 255;
+        }
+        //public static void CopyPixel((byte r, byte g, byte b) pixel, byte[] data, int x, int y, int stride) => CopyPixel(pixel, data, ((y * stride) + x) * 4);
+        //public static void CopyPixel((byte r, byte g, byte b) pixel, byte[] data, long address)
+        //{
+        //	data[address + 0] = pixel.r;
+        //	data[address + 1] = pixel.g;
+        //	data[address + 2] = pixel.b;
+        //	data[address + 3] = 255;
+        //}
+    }
 }

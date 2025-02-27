@@ -4,7 +4,7 @@ using static StoicGoose.Common.Utilities.BitHandling;
 
 namespace StoicGoose.Core.Display
 {
-	public sealed class AswanDisplayController : DisplayControllerCommon
+	public sealed unsafe class AswanDisplayController : DisplayControllerCommon
 	{
 		public AswanDisplayController(IMachine machine) : base(machine) { }
 

@@ -43,9 +43,11 @@ namespace StoicGoose.Core.Interfaces
 		SoundControllerCommon SoundController { get; }
 		EEPROM InternalEeprom { get; }
 
-		Func<(List<string> buttonsPressed, List<string> buttonsHeld)> ReceiveInput { get; set; }
+        //Func<(List<string> buttonsPressed, List<string> buttonsHeld)> ReceiveInput { get; set; }
+		
+        Func<long> ReceiveInput { get; set; }
 
-		Func<uint, byte, byte> ReadMemoryCallback { get; set; }
+        Func<uint, byte, byte> ReadMemoryCallback { get; set; }
 		Action<uint, byte> WriteMemoryCallback { get; set; }
 		Func<ushort, byte, byte> ReadPortCallback { get; set; }
 		Action<ushort, byte> WritePortCallback { get; set; }

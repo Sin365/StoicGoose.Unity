@@ -13,18 +13,6 @@ public class UStoicGoose : MonoBehaviour
 {
     public static UStoicGoose instance;
     public static System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
-    void Awake()
-    {
-        instance = this;
-        Program.InitPath(Application.persistentDataPath);
-        Init();
-        LoadAndRunCartridge("");
-    }
-
-    private void OnDestroy()
-    {
-        EmuClose();
-    }
 
     /* Constants */
     readonly static int maxScreenSizeFactor = 5;
@@ -43,7 +31,8 @@ public class UStoicGoose : MonoBehaviour
     SGVideoPlayer graphicsHandler = default;
     SGSoundPlayer soundHandler = default;
     SGKeyboard inputHandler = default;
-    EmulatorHandler emulatorHandler = default;
+    SGLogger loggerHandler = default;
+    public EmulatorHandler emulatorHandler = default;
 
     /* Misc. windows */
     //SoundRecorderForm soundRecorderForm = default;
@@ -53,9 +42,39 @@ public class UStoicGoose : MonoBehaviour
     Type machineType = default;
     bool isVerticalOrientation = false;
     string internalEepromPath = string.Empty;
+
+    public string CurrRomName { get; private set; }
+
     //Cheat[] cheats = default;
 
+    #region Unity 生命周期
 
+    void Awake()
+    {
+        instance = this;
+        loggerHandler = new SGLogger();
+        graphicsHandler = this.gameObject.GetComponent<SGVideoPlayer>();
+        soundHandler = this.gameObject.GetComponent<SGSoundPlayer>();
+        inputHandler = this.gameObject.GetComponent<SGKeyboard>();
+        Log.Initialize(loggerHandler);
+        Program.InitPath(Application.persistentDataPath);
+        Init();
+        LoadAndRunCartridge("G:/BaiduNetdiskDownload/Rockman & Forte - Mirai Kara no Chousen Sha (J) [M][!].ws");
+    }
+    private void Update()
+    {
+        if (!emulatorHandler.IsRunning)
+            return;
+
+        inputHandler.Update_InputData();
+
+        emulatorHandler.Frame_Update();
+    }
+    void OnDestroy()
+    {
+        EmuClose();
+    }
+    #endregion
     private void Init()
     {
         Log.WriteEvent(LogSeverity.Information, this, "Initializing emulator and UI...");
@@ -67,7 +86,7 @@ public class UStoicGoose : MonoBehaviour
         InitializeOtherHandlers();
         //InitializeWindows();
 
-        SizeAndPositionWindow();
+        //SizeAndPositionWindow();
         SetWindowTitleAndStatus();
         Log.WriteEvent(LogSeverity.Information, this, "Initialization done!");
     }
@@ -111,24 +130,21 @@ public class UStoicGoose : MonoBehaviour
 
     private void InitializeOtherHandlers()
     {
-        databaseHandler = new DatabaseHandler(Program.NoIntroDatPath);
+        databaseHandler = new DatabaseHandler();
 
         //statusIconsLocation = machineType == typeof(WonderSwan) ? new(0, DisplayControllerCommon.ScreenHeight) : new(DisplayControllerCommon.ScreenWidth, 0);
-        graphicsHandler = this.gameObject.GetComponent<SGVideoPlayer>();
+
         //TODO graphicsHandler基本参数，可能需要补上
         //graphicsHandler = new GraphicsHandler(machineType, new(emulatorHandler.Machine.ScreenWidth, emulatorHandler.Machine.ScreenHeight), statusIconsLocation, statusIconSize, machineType != typeof(WonderSwan), Program.Configuration.Video.Shader)
         //{
         //    IsVerticalOrientation = isVerticalOrientation
         //};
 
-        soundHandler = this.gameObject.GetComponent<SGSoundPlayer>();
         //TODO 声音基本参数，可能需要补上
         //soundHandler = new SoundHandler(44100, 2);
         //soundHandler.SetVolume(1.0f);
         //soundHandler.SetMute(Program.Configuration.Sound.Mute);
         //soundHandler.SetLowPassFilter(Program.Configuration.Sound.LowPassFilter);
-
-        inputHandler = this.gameObject.GetComponent<SGKeyboard>();
 
         //TODO Input基本参数，可能需要补上
         //inputHandler = new InputHandler(renderControl);
@@ -140,6 +156,7 @@ public class UStoicGoose : MonoBehaviour
         //    .Select(x => x.Split('=', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         //    .ToDictionary(x => x[0], x => x[1]));
 
+        
         emulatorHandler.Machine.DisplayController.SendFramebuffer = graphicsHandler.UpdateScreen;
         emulatorHandler.Machine.SoundController.SendSamples = (s) =>
         {
@@ -149,15 +166,17 @@ public class UStoicGoose : MonoBehaviour
 
         emulatorHandler.Machine.ReceiveInput += () =>
         {
-            var buttonsPressed = new List<string>();
-            var buttonsHeld = new List<string>();
+            //var buttonsPressed = new List<string>();
+            //var buttonsHeld = new List<string>();
 
-            inputHandler.PollInput(ref buttonsPressed, ref buttonsHeld);
+            //inputHandler.PollInput(ref buttonsPressed, ref buttonsHeld);
+            long buttonsHeld = 0;
+            inputHandler.PollInput(ref buttonsHeld);
+            return buttonsHeld;
+            //if (buttonsPressed.Contains("Volume"))
+            //    emulatorHandler.Machine.SoundController.ChangeMasterVolume();
 
-            if (buttonsPressed.Contains("Volume"))
-                emulatorHandler.Machine.SoundController.ChangeMasterVolume();
-
-            return (buttonsPressed, buttonsHeld);
+            //return (buttonsPressed, buttonsHeld);
         };
 
         //renderControl.Resize += (s, e) => { if (s is Control control) graphicsHandler.Resize(control.ClientRectangle); };
@@ -209,12 +228,12 @@ public class UStoicGoose : MonoBehaviour
 
     private void SizeAndPositionWindow()
     {
-        //if (WindowState == FormWindowState.Maximized)
+        graphicsHandler.SetSize(emulatorHandler.Machine.ScreenWidth, emulatorHandler.Machine.ScreenHeight);
+        //if (WindowState == For emulatorHandler.Machine.ScreenHeight;mWindowState.Maximized)
         //    WindowState = FormWindowState.Normal;
 
         //MinimumSize = SizeFromClientSize(CalculateRequiredClientSize(2));
         //Size = SizeFromClientSize(CalculateRequiredClientSize(Program.Configuration.Video.ScreenSize));
-
         //var screen = Screen.FromControl(this);
         //var workingArea = screen.WorkingArea;
         //Location = new Point()
@@ -223,6 +242,7 @@ public class UStoicGoose : MonoBehaviour
         //    Y = Math.Max(workingArea.Y, workingArea.Y + (workingArea.Height - Height) / 2)
         //};
     }
+
 
     //TODO 设置屏幕宽高 看是否需要
     //private Size CalculateRequiredClientSize(int screenSize)
@@ -338,6 +358,8 @@ public class UStoicGoose : MonoBehaviour
         graphicsHandler.IsVerticalOrientation = isVerticalOrientation = emulatorHandler.Machine.Cartridge.Metadata.Orientation == CartridgeMetadata.Orientations.Vertical;
         inputHandler.SetVerticalOrientation(isVerticalOrientation);
 
+        CurrRomName = Path.GetFileName(filename);
+
         LoadRam();
 
         LoadBootstrap(emulatorHandler.Machine is WonderSwan ? Program.Configuration.General.BootstrapFile : Program.Configuration.General.BootstrapFileWSC);
@@ -353,7 +375,8 @@ public class UStoicGoose : MonoBehaviour
 
     private void LoadRam()
     {
-        var path = Path.Combine(Program.SaveDataPath, $"{Path.GetFileNameWithoutExtension(Program.Configuration.General.RecentFiles.First())}.sav");
+        //var path = Path.Combine(Program.SaveDataPath, $"{Path.GetFileNameWithoutExtension(Program.Configuration.General.RecentFiles.First())}.sav");
+        var path = Path.Combine(Program.SaveDataPath, $"{CurrRomName}.sav");
         if (!File.Exists(path)) return;
 
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -383,7 +406,8 @@ public class UStoicGoose : MonoBehaviour
         var data = emulatorHandler.Machine.GetSaveData();
         if (data.Length == 0) return;
 
-        var path = Path.Combine(Program.SaveDataPath, $"{Path.GetFileNameWithoutExtension(Program.Configuration.General.RecentFiles.First())}.sav");
+        //var path = Path.Combine(Program.SaveDataPath, $"{Path.GetFileNameWithoutExtension(Program.Configuration.General.RecentFiles.First())}.sav");
+        var path = Path.Combine(Program.SaveDataPath, $"{CurrRomName}.sav");
 
         using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
         stream.Write(data, 0, data.Length);
@@ -435,7 +459,7 @@ static class Program
     static string programDataDirectory;//= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName);
     static string programConfigPath;//= Path.Combine(programDataDirectory, jsonConfigFileName);
 
-    public static Configuration Configuration { get; private set; } = LoadConfiguration(programConfigPath);
+    public static Configuration Configuration;// { get; private set; } = LoadConfiguration(programConfigPath);
 
     public static string DataPath;//{ get; } = string.Empty;
     public static string InternalDataPath;//{ get; } = string.Empty;
@@ -443,8 +467,8 @@ static class Program
     public static string CheatsDataPath;//{ get; } = string.Empty;
     public static string DebuggingDataPath;//{ get; } = string.Empty;
 
-    readonly static string programApplicationDirectory = AppDomain.CurrentDomain.BaseDirectory;
-    readonly static string programAssetsDirectory = Path.Combine(programApplicationDirectory, assetsDirectoryName);
+    static string programApplicationDirectory;// = AppDomain.CurrentDomain.BaseDirectory;
+    static string programAssetsDirectory;// = Path.Combine(programApplicationDirectory, assetsDirectoryName);
 
     //public static string ShaderPath { get; } = string.Empty;
     public static string NoIntroDatPath;// { get; } = string.Empty;
@@ -455,7 +479,6 @@ static class Program
     {
         try
         {
-
             jsonConfigFileName = "Config.json";
             logFileName = "Log.txt";
             internalDataDirectoryName = "Internal";
@@ -468,9 +491,10 @@ static class Program
             mutexName = $"Unity_{GetVersionDetails()}";
             programDataDirectory = Path.Combine(CustonDataDir, "AxibugEmu");
             programConfigPath = Path.Combine(programDataDirectory, jsonConfigFileName);
-
+            Configuration = LoadConfiguration(programConfigPath);
             Log.WriteLine(Path.Combine(programDataDirectory, logFileName));
-
+            programApplicationDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            programAssetsDirectory = Path.Combine(programApplicationDirectory, assetsDirectoryName);
             Directory.CreateDirectory(DataPath = programDataDirectory);
             Directory.CreateDirectory(InternalDataPath = Path.Combine(programDataDirectory, internalDataDirectoryName));
             Directory.CreateDirectory(SaveDataPath = Path.Combine(programDataDirectory, saveDataDirectoryName));

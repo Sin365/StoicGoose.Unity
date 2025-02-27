@@ -53,9 +53,10 @@ namespace StoicGoose.Core.Machines
 		public abstract int BootstrapRomAddress { get; }
 		public abstract int BootstrapRomSize { get; }
 
-		public Func<(List<string> buttonsPressed, List<string> buttonsHeld)> ReceiveInput { get; set; } = default;
+        //public Func<(List<string> buttonsPressed, List<string> buttonsHeld)> ReceiveInput { get; set; } = default;
+        public Func<long> ReceiveInput { get; set; } = default;
 
-		public Func<uint, byte, byte> ReadMemoryCallback { get; set; } = default;
+        public Func<uint, byte, byte> ReadMemoryCallback { get; set; } = default;
 		public Action<uint, byte> WriteMemoryCallback { get; set; } = default;
 		public Func<ushort, byte, byte> ReadPortCallback { get; set; } = default;
 		public Action<ushort, byte> WritePortCallback { get; set; } = default;

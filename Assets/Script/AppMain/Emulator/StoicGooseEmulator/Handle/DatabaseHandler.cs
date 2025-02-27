@@ -4,28 +4,56 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
-
 using StoicGoose.Common.Utilities;
-
 
 public sealed class DatabaseHandler
 {
     readonly Dictionary<string, DatFile> datFiles = new();
+    const string ResourceRoot = "StoicGooseUnity/emu/";
 
-    public DatabaseHandler(string directory)
+    public DatabaseHandler()
     {
-        foreach (var file in Directory.EnumerateFiles(directory, "*.dat").OrderBy(x => x.Length))
         {
-            var root = new XmlRootAttribute("datafile") { IsNullable = true };
-            var serializer = new XmlSerializer(typeof(DatFile), root);
-            using FileStream stream = new(Path.Combine(directory, file), FileMode.Open);
-            var reader = XmlReader.Create(stream, new() { DtdProcessing = DtdProcessing.Ignore });
-            datFiles.Add(Path.GetFileName(file), (DatFile)serializer.Deserialize(reader));
+            string wsc = "Bandai - WonderSwan Color.dat";
+            GetDatBytes(wsc, out byte[] loadedData);
+            using (MemoryStream stream = new MemoryStream(loadedData))
+            {
+                var root = new XmlRootAttribute("datafile") { IsNullable = true };
+                var serializer = new XmlSerializer(typeof(DatFile), root);
+                var reader = XmlReader.Create(stream, new() { DtdProcessing = DtdProcessing.Ignore });
+                datFiles.Add(Path.GetFileName(wsc), (DatFile)serializer.Deserialize(reader));
+            }
+        }
+
+        {
+            string ws = "Bandai - WonderSwan.dat";
+            GetDatBytes(ws, out byte[] loadedData);
+            using (MemoryStream stream = new MemoryStream(loadedData))
+            {
+                var root = new XmlRootAttribute("datafile") { IsNullable = true };
+                var serializer = new XmlSerializer(typeof(DatFile), root);
+                var reader = XmlReader.Create(stream, new() { DtdProcessing = DtdProcessing.Ignore });
+                datFiles.Add(Path.GetFileName(ws), (DatFile)serializer.Deserialize(reader));
+            }
         }
 
         Log.WriteEvent(LogSeverity.Information, this, $"Loaded {datFiles.Count} .dat file(s) with {datFiles.Sum(x => x.Value.Game.Length)} known game(s).");
         foreach (var datFile in datFiles.Select(x => x.Value))
             Log.WriteLine($" '{datFile.Header.Name} ({datFile.Header.Version})' from {datFile.Header.Homepage}");
+    }
+
+    bool GetDatBytes(string DatName, out byte[] loadedData)
+    {
+        try
+        {
+            loadedData = UnityEngine.Resources.Load<UnityEngine.TextAsset>(ResourceRoot + "Dat/" + DatName).bytes;
+            return true;
+        }
+        catch
+        {
+            loadedData = null;
+            return false;
+        }
     }
 
     private DatGame GetGame(uint romCrc32, int romSize)

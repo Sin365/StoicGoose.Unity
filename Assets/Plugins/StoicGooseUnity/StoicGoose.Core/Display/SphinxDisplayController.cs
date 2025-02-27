@@ -5,7 +5,7 @@ using static StoicGoose.Common.Utilities.BitHandling;
 
 namespace StoicGoose.Core.Display
 {
-	public sealed class SphinxDisplayController : DisplayControllerCommon
+	public sealed unsafe class SphinxDisplayController : DisplayControllerCommon
 	{
 		// TODO: reimplement high contrast mode; also, get a WSC, figure out how it's supposed to look?
 

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using StoicGoose.Common.Extensions;
+﻿using System.Collections.Generic;
 
 namespace StoicGoose.Common.Utilities
 {
-	public enum LogSeverity { Verbose, Debug, Information, Warning, Error, Fatal }
+    public enum LogSeverity { Verbose, Debug, Information, Warning, Error, Fatal }
     public enum LogType { Debug, Warning, Error }
 
     public interface IStoicGooseLogger
